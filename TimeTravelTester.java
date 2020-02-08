@@ -59,8 +59,127 @@ public class TimeTravelTester {
          diff = endTime - startTime;
          diff_time = (double) diff / 1_000_000_000;
          System.out.println("Took "+ diff_time + " s");
-         **/
 
+         //Check if elements are added to priority queue in order:
+         A*
+         100 100
+         2020 14 14
+         2020 15 15
+         0
+
+         // Check if the switch is happening in UCS
+         UCS
+         2 2
+         3011 0 0
+         3023 0 0
+         4
+         3011 0 0 3013
+         3011 0 0 3010
+         3013 0 0 3023
+         3010 0 0 3023
+
+         // Check if switch is happening in A*
+
+         // Multichannel
+
+
+         //Base Case- Already at goal
+         BFS
+         100 100
+         2020 10 10
+         2020 10 10
+         1
+         2020 10 10 2012
+
+         UCS
+         100 100
+         2020 10 10
+         2020 10 10
+         1
+         2020 10 10 2012
+
+         A*
+         100 100
+         2020 10 10
+         2020 10 10
+         1
+         2020 10 10 2012
+
+         //Stress Test
+         BFS
+         100 100
+         2020 0 0
+         2040 100 100
+         4
+         2020 100 100 3000
+         3000 0 0 2000
+         2030 100 100 2000
+         2030 0 0 2040
+
+         UCS different than A*
+
+
+         // Same Plane
+         BFS
+         100 100
+         2020 0 0
+         2020 10 10
+         0
+
+         UCS
+         100 100
+         2020 0 0
+         2020 10 10
+         0
+
+         A*
+         100 100
+         2020 0 0
+         2020 10 10
+         0
+
+         // Order of paths : UCS vs A*
+
+         // 10s come before 14s
+
+         UCS
+         100 100
+         2020 0 0
+         2020 11 16
+         0
+
+
+         // 14s come before 10s
+
+         A*
+         100 100
+         2020 0 0
+         2020 11 16
+         0
+
+         UCS
+         100 100
+         2020 49 49
+         2030 0 0
+         15
+         2020 0 0 2021
+         2021 100 100 2029
+         2029 100 100 2020
+         2020 80 80 2031
+         2031 0 0 2019
+         2019 10 99 2028
+         2028 99 10 2021
+         2021 1 1 2032
+         2032 100 100 2030
+         2030 50 50 2050
+         2050 100 100 2100
+         2100 0 0 2000
+         2000 0 0 2089
+         2089 10 100 2030
+         2030 0 0 1996
+
+         **/
 
     }
 }
+

@@ -5,24 +5,22 @@ public class TimeTravel {
 
     public static void readInput() throws IOException {
 
-        File file = new File("input.txt");
-        Scanner in = new Scanner(file);
+        File intput_file = new File("input.txt");
+        Scanner in = new Scanner(intput_file);
         String search_algo = in.nextLine();
+        int max_x, max_y, initial_year, initial_x, initial_y, final_x, final_y, final_year, number_of_channels, first_year, x, y, second_year, NSEW, DIAGONAL, JAUNT;
+        max_x = in.nextInt();
+        max_y = in.nextInt();
 
-        int max_x = in.nextInt();
-        int max_y = in.nextInt();
+        initial_year = in.nextInt();
+        initial_x = in.nextInt();
+        initial_y = in.nextInt();
 
-        int initial_year = in.nextInt();
-        int initial_x = in.nextInt();
-        int initial_y = in.nextInt();
+        final_year = in.nextInt();
+        final_x = in.nextInt();
+        final_y = in.nextInt();
 
-        int final_year = in.nextInt();
-        int final_x = in.nextInt();
-        int final_y = in.nextInt();
-
-        int number_of_channels = in.nextInt();
-
-        int first_year, x, y, second_year, NSEW, DIAGONAL, JAUNT;
+        number_of_channels = in.nextInt();
 
         if (search_algo.equals("BFS")){
             NSEW = DIAGONAL = JAUNT = 1;
@@ -43,6 +41,7 @@ public class TimeTravel {
             problem.AddChannels(first_year, x, y, second_year);
         }
 
+        // Start Search
         if(search_algo.equals("BFS")){ BFS(problem); }
         else if (search_algo.equals("UCS")){ UCS(problem); }
         else { AStar(problem); }
@@ -74,16 +73,29 @@ public class TimeTravel {
 
             for(Node child: problem.Actions(node)) {
 
-                child.SetParent(node);
-                child.SetTotalCost(problem.FutureCost(child));
-
                 if(!(frontier.contains(child) || explored.contains(child))) {
+                    child.SetParent(node);
+                    child.SetTotalCost(problem.FutureCost(child));
                     child.SetCost(); // assign temp cost to cost
                     frontier.add(child); // based on the temp+future cost
 
                 }
-                else if (frontier.contains(child) && child.GetTotalCost() > child.GetTotalCost()){
-                    child.SetCost(); // Update the cost to the temp cost
+                else if (frontier.contains(child)){
+                    Iterator<Node> iter = frontier.iterator();
+                    Node c = null;
+                    while(iter.hasNext()){
+                        c = iter.next();
+                        if(c.equals(child)){
+                            break;
+                        }
+                    }
+                    if(c.GetTotalCost() > (child.GetTempCost() + problem.FutureCost(child))) {
+                        //probably remove the node from the queue first, modify cost and then add it again
+                        child.SetParent(node);
+                        frontier.remove(child);
+                        child.SetCost();
+                        frontier.add(child);
+                    }
                 }
             }
         }
@@ -114,15 +126,29 @@ public class TimeTravel {
 
             for(Node child: problem.Actions(node)) {
 
-                child.SetParent(node);
-
                 if(!(frontier.contains(child) || explored.contains(child))) {
+                    child.SetParent(node);
                     child.SetCost();
+                    //System.out.println(child.NodeString());
                     frontier.add(child);
 
                 }
-                else if (frontier.contains(child) && child.GetCost() > child.GetTempCost()){
-                    child.SetCost();
+                else if (frontier.contains(child)){
+                    Iterator<Node> iter = frontier.iterator();
+                    Node c = null;
+                    while(iter.hasNext()){
+                        c = iter.next();
+                        if(c.equals(child)){
+                            break;
+                        }
+                    }
+                    if(c.GetCost() > child.GetTempCost()) {
+                        //probably remove the node from the queue first, modify cost and then add it again
+                        child.SetParent(node);
+                        frontier.remove(child);
+                        child.SetCost();
+                        frontier.add(child);
+                    }
                 }
             }
         }
@@ -152,10 +178,11 @@ public class TimeTravel {
 
             for(Node child: problem.Actions(node)){
 
-                child.SetParent(node);
-                child.SetCost();
-
                 if(!(frontier.contains(child) || explored.contains(child))){
+
+                    child.SetParent(node);
+                    child.SetCost();
+
                     if(problem.GoalNode().GetState().equals(child.GetState())){
                         Solution(child);
                         System.out.println("Reached in loop: " + child.GetCost());
@@ -207,14 +234,13 @@ public class TimeTravel {
         out.close();
     }
 
-    public static void main(String[] args){
-        try {
-            readInput();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static void main(String[] args) throws IOException {
+        long start = System.nanoTime();
+        readInput();
+        long end = System.nanoTime();
+
+        System.out.println("Time: " + (end - start)/1000000000);
+
     }
 }
 
@@ -248,9 +274,9 @@ class Problem{
     public void AddChannels(int year_one, int x, int y, int year_two){
         Node nodeOne = new Node(x, y, year_one);
         Node nodeTwo = new Node(x, y, year_two);
-        ArrayList<Node> list = new ArrayList<>();
+        ArrayList<Node> list;
 
-        channels.getOrDefault(nodeOne, new ArrayList<Node>());
+        list = channels.getOrDefault(nodeOne, new ArrayList<Node>());
         list.add(nodeTwo);
         channels.put(nodeOne, list);
 
