@@ -1,9 +1,16 @@
 import java.io.*;
+import java.sql.Time;
 import java.util.*;
 
 public class TimeTravel {
 
-    public static void readInput() throws IOException {
+
+    public TimeTravel(){
+
+    }
+
+
+    public void readInput() throws IOException {
 
         File intput_file = new File("input.txt");
         Scanner in = new Scanner(intput_file);
@@ -48,13 +55,15 @@ public class TimeTravel {
 
     }
 
-    public static void AStar(Problem problem) throws IOException {
-        Node node = problem.InitialNode();
+    public void AStar(Problem problem) throws IOException {
+        Node node = problem.initial_node;
 
-        PriorityQueue<Node> frontier = new PriorityQueue<>(10, new AStarComparartor());
+        PriorityQueue<Node> frontier = new PriorityQueue<>(100, new AStarComparartor());
+        HashMap<Node, Integer> frontier_map = new HashMap<>();
         HashSet<Node> explored = new HashSet<>();
 
         frontier.add(node);
+        frontier_map.put(node, node.total_cost);
 
         while(true){
             if(frontier.isEmpty()){
@@ -64,50 +73,50 @@ public class TimeTravel {
             }
 
             node = frontier.poll();
-            if(problem.GoalNode().GetState().equals(node.GetState())){
+            frontier_map.remove(node);
+
+            if(problem.goal_node.equals(node)){
                 Solution(node);
-                System.out.println("Reached in loop: " + node.GetCost());
+                System.out.println("Reached in loop: " + node.cost);
                 return;
             }
+
             explored.add(node);
 
             for(Node child: problem.Actions(node)) {
 
-                if(!(frontier.contains(child) || explored.contains(child))) {
-                    child.SetParent(node);
-                    child.SetTotalCost(problem.FutureCost(child));
-                    child.SetCost(); // assign temp cost to cost
+                if(!(frontier_map.containsKey(child) || explored.contains(child))) {
+                    child.parent = node;
+                    child.total_cost = child.temp_cost + problem.FutureCost(child);
+                    child.cost = child.temp_cost; // assign temp cost to cost
                     frontier.add(child); // based on the temp+future cost
+                    frontier_map.put(child, child.total_cost);
 
                 }
-                else if (frontier.contains(child)){
-                    Iterator<Node> iter = frontier.iterator();
-                    Node c = null;
-                    while(iter.hasNext()){
-                        c = iter.next();
-                        if(c.equals(child)){
-                            break;
-                        }
-                    }
-                    if(c.GetTotalCost() > (child.GetTempCost() + problem.FutureCost(child))) {
+                else if (frontier_map.containsKey(child)){
+                    if(frontier_map.get(child) > (child.temp_cost + problem.FutureCost(child))) {
                         //probably remove the node from the queue first, modify cost and then add it again
-                        child.SetParent(node);
+                        child.parent = node;
                         frontier.remove(child);
-                        child.SetCost();
+                        child.total_cost = child.temp_cost + problem.FutureCost(child);
+                        child.cost = child.temp_cost;
                         frontier.add(child);
+                        frontier_map.put(child, child.total_cost);
                     }
                 }
             }
         }
     }
 
-    public static void UCS(Problem problem) throws IOException {
+    public void UCS(Problem problem) throws IOException {
         Node node = problem.InitialNode();
 
         PriorityQueue<Node> frontier = new PriorityQueue<>(10, new UCSComparator());
+        HashMap<Node, Integer> frontier_map = new HashMap<>();
         HashSet<Node> explored = new HashSet<>();
 
         frontier.add(node);
+        frontier_map.put(node, node.cost);
 
         while(true){
             if(frontier.isEmpty()){
@@ -117,78 +126,79 @@ public class TimeTravel {
             }
 
             node = frontier.poll();
-            if(problem.GoalNode().GetState().equals(node.GetState())){
+            frontier_map.remove(node);
+
+            if(problem.goal_node.equals(node)){
                 Solution(node);
-                System.out.println("Reached in loop: " + node.GetCost());
+                System.out.println("Reached in loop: " + node.cost);
                 return;
             }
             explored.add(node);
 
             for(Node child: problem.Actions(node)) {
 
-                if(!(frontier.contains(child) || explored.contains(child))) {
-                    child.SetParent(node);
-                    child.SetCost();
+                if(!(frontier_map.containsKey(child) || explored.contains(child))) {
+                    child.parent = node;
+                    child.cost = child.temp_cost;
                     //System.out.println(child.NodeString());
                     frontier.add(child);
+                    frontier_map.put(child, child.cost);
 
                 }
-                else if (frontier.contains(child)){
-                    Iterator<Node> iter = frontier.iterator();
-                    Node c = null;
-                    while(iter.hasNext()){
-                        c = iter.next();
-                        if(c.equals(child)){
-                            break;
-                        }
-                    }
-                    if(c.GetCost() > child.GetTempCost()) {
+                else if (frontier_map.containsKey(child)){
+                    if(frontier_map.get(child) > child.temp_cost) {
                         //probably remove the node from the queue first, modify cost and then add it again
-                        child.SetParent(node);
                         frontier.remove(child);
-                        child.SetCost();
+                        child.parent = node;
+                        child.cost = child.temp_cost;
+                        //frontier.add(frontier.poll());
                         frontier.add(child);
+                        frontier_map.put(child, child.cost);
                     }
                 }
             }
         }
     }
-    public static void BFS(Problem problem) throws IOException {
-        Node node = problem.InitialNode();
 
-        if(problem.GoalNode().GetState().equals(node.GetState())){
+    public void BFS(Problem problem) throws IOException {
+        Node node = problem.initial_node;
+
+        if(problem.goal_node.equals(node)){
             Solution(node);
             System.out.println("Reached");
             return;
         }
+        Queue<Node> frontier_BFS = new LinkedList<>();
+        HashSet<Node> frontier_set = new HashSet<>();
+        HashSet<Node> explored_BFS = new HashSet<>();
 
-        Queue<Node> frontier = new LinkedList<>();
-        ArrayList<Node> explored = new ArrayList<>();
-
-        frontier.add(node);
+        frontier_BFS.add(node);
+        frontier_set.add(node);
         while(true){
-            if(frontier.isEmpty()){
+            if(frontier_BFS.isEmpty()){
                 Failed();
                 System.out.println("Failed");//fail
                 return;
             }
 
-            node = frontier.poll();
-            explored.add(node);
+            node = frontier_BFS.poll();
+            frontier_set.remove(node);
+            explored_BFS.add(node);
 
             for(Node child: problem.Actions(node)){
 
-                if(!(frontier.contains(child) || explored.contains(child))){
+                if(!(frontier_set.contains(child) || explored_BFS.contains(child))){
 
-                    child.SetParent(node);
-                    child.SetCost();
+                    child.parent = node;
+                    child.cost = child.temp_cost;
 
-                    if(problem.GoalNode().GetState().equals(child.GetState())){
+                    if(problem.goal_node.equals(child)){
                         Solution(child);
-                        System.out.println("Reached in loop: " + child.GetCost());
+                        System.out.println("Reached in loop: " + child.cost);
                         return;
                     }
-                    frontier.add(child);
+                    frontier_BFS.add(child);
+                    frontier_set.add(child);
                 }
             }
 
@@ -196,37 +206,37 @@ public class TimeTravel {
 
     }
 
-    public static void Failed() throws IOException {
+    public void Failed() throws IOException {
         File file = new File("output.txt");
         BufferedWriter out = new BufferedWriter(new FileWriter(file));
         out.write("FAIL");
         out.close();
     }
 
-    public static void Solution(Node node) throws IOException {
+    public void Solution(Node node) throws IOException {
         File file = new File("output.txt");
         BufferedWriter out = new BufferedWriter(new FileWriter(file));
 
-        out.write(Integer.toString(node.GetCost()));
-        System.out.println(node.GetCost());
+        out.write(Integer.toString(node.cost));
+        //System.out.println(node.cost);
         out.newLine();
 
         List<Node> path = new ArrayList<>();
         while(node != null){
             path.add(node);
-            node = node.GetParent();
+            node = node.parent;
         }
 
         //reverse
         Collections.reverse(path);
 
         out.write(Integer.toString(path.size()));
-        System.out.println(path.size());
+        //System.out.println(path.size());
         out.newLine();
 
         for(int i = 0; i < path.size() - 1; i++){
             Node n = path.get(i);
-            System.out.println(n.NodeString());
+            //System.out.println(n.NodeString());
             out.write(n.NodeString());
             out.newLine();
         }
@@ -235,8 +245,9 @@ public class TimeTravel {
     }
 
     public static void main(String[] args) throws IOException {
+        TimeTravel t = new TimeTravel();
         long start = System.nanoTime();
-        readInput();
+        t.readInput();
         long end = System.nanoTime();
 
         System.out.println("Time: " + (end - start)/1000000000);
@@ -246,22 +257,21 @@ public class TimeTravel {
 
 
 class Problem{
-    private Node initial_node;
-    private Node goal_node;
-    private HashMap<Node, ArrayList<Node>> channels;
-    private static String[] actions;
-    private int grid_max_x;
-    private int grid_max_y;
-    private int num_channels;
-    private int NSEW_COST;
-    private int DIAGONAL_COST;
-    private int JAUNT_COST;
+    public Node initial_node;
+    public Node goal_node;
+    public HashMap<Node, ArrayList<Node>> channels;
+    public static String[] actions;
+    public int grid_max_x;
+    public int grid_max_y;
+    public int num_channels;
+    public int NSEW_COST;
+    public int DIAGONAL_COST;
+    public int JAUNT_COST;
 
     public Problem(int initial_x, int initial_y, int initial_year, int final_x, int final_y, int final_year, int grid_max_x, int grid_max_y, int num_channels, int NSEW, int DIAGONAL, int JAUNT){
         initial_node = new Node(initial_x, initial_y, initial_year);
         goal_node = new Node(final_x, final_y, final_year);
         channels = new HashMap<>();
-        actions = new String[]{"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
         this.grid_max_x = grid_max_x;
         this.grid_max_y = grid_max_y;
         this.num_channels = num_channels;
@@ -286,7 +296,7 @@ class Problem{
     }
 
     public boolean legal_position(int x, int y) {
-        if (x >= 0 && x <= grid_max_x && y >= 0 && y <= grid_max_y) {
+        if (x >= 0 && x < grid_max_x && y >= 0 && y < grid_max_y) {
             return true;
         }
         return false;
@@ -295,102 +305,84 @@ class Problem{
     //Return a list of viable actions
     public ArrayList<Node> Actions(Node node){
         ArrayList<Node> actions_list = new ArrayList<>();
-
-        if(legal_position(node.GetState().GetX(), node.GetState().GetY() + 1)){
-            actions_list.add(MoveOrJaunt("N", node));
+        Node new_node = null;
+        if(legal_position(node.position_x, node.position_y + 1)){
+            new_node = new Node(node.position_x, node.position_y + 1, node.year);
+            new_node.temp_cost = (node.cost + NSEW_COST);
+            actions_list.add(new_node);
         }
-        if(legal_position(node.GetState().GetX() + 1, node.GetState().GetY() + 1)){
-            actions_list.add(MoveOrJaunt("NE", node));
+        if(legal_position(node.position_x + 1, node.position_y + 1)){
+            new_node = new Node(node.position_x + 1, node.position_y + 1, node.year);
+            new_node.temp_cost = (node.cost + DIAGONAL_COST);
+            actions_list.add(new_node);
         }
-        if(legal_position(node.GetState().GetX() + 1, node.GetState().GetY())){
-            actions_list.add(MoveOrJaunt("E", node));
+        if(legal_position(node.position_x + 1, node.position_y)){
+            new_node = new Node(node.position_x + 1, node.position_y, node.year);
+            new_node.temp_cost = (node.cost + NSEW_COST);
+            actions_list.add(new_node);
         }
-        if(legal_position(node.GetState().GetX() + 1, node.GetState().GetY() - 1)){
-            actions_list.add(MoveOrJaunt("SE", node));
+        if(legal_position(node.position_x + 1, node.position_y - 1)){
+            new_node = new Node(node.position_x + 1, node.position_y - 1, node.year);
+            new_node.temp_cost = (node.cost + DIAGONAL_COST);
+            actions_list.add(new_node);
         }
-        if(legal_position(node.GetState().GetX(), node.GetState().GetY() - 1)){
-            actions_list.add(MoveOrJaunt("S", node));
+        if(legal_position(node.position_x, node.position_y - 1)){
+            new_node = new Node(node.position_x, node.position_y - 1, node.year);
+            new_node.temp_cost = (node.cost + NSEW_COST);
+            actions_list.add(new_node);
         }
-        if(legal_position(node.GetState().GetX() - 1 , node.GetState().GetY() - 1)){
-            actions_list.add(MoveOrJaunt("SW", node));
+        if(legal_position(node.position_x - 1 , node.position_y - 1)){
+            new_node = new Node(node.position_x - 1, node.position_y - 1, node.year);
+            new_node.temp_cost = (node.cost + DIAGONAL_COST);
+            actions_list.add(new_node);
         }
-        if(legal_position(node.GetState().GetX() - 1, node.GetState().GetY())){
-            actions_list.add(MoveOrJaunt("W", node));
+        if(legal_position(node.position_x - 1, node.position_y)){
+            new_node = new Node(node.position_x - 1, node.position_y, node.year);
+            new_node.temp_cost = (node.cost + NSEW_COST);
+            actions_list.add(new_node);
         }
-        if(legal_position(node.GetState().GetX() - 1, node.GetState().GetY() + 1)){
-            actions_list.add(MoveOrJaunt("NW", node));
+        if(legal_position(node.position_x - 1, node.position_y + 1)){
+            new_node = new Node(node.position_x - 1, node.position_y + 1, node.year);
+            new_node.temp_cost = (node.cost + DIAGONAL_COST);
+            actions_list.add(new_node);
         }
 
         if(channels.containsKey(node)){
             for(Node child : channels.get(node)){
-                if(JAUNT_COST == 1 ){ child.SetTempCost(node.GetCost() + JAUNT_COST); }
-                else{ child.SetTempCost(node.GetCost() + Math.abs(node.GetState().GetYear() - child.GetState().GetYear())); }
+                if(JAUNT_COST == 1 ){ child.temp_cost = node.cost + JAUNT_COST; }
+                else{ child.temp_cost = node.cost + Math.abs(node.year - child.year); }
                 actions_list.add(child);
             }
         }
         return actions_list;
     }
 
-    public Node MoveOrJaunt(String action, Node node){
-        Node child = null;
-        switch(action){
-            case "N":
-                child = new Node(node.GetState().GetX(), node.GetState().GetY() + 1, node.GetState().GetYear());
-                child.SetTempCost(node.GetCost() + NSEW_COST);
-                break;
-            case "S":
-                child = new Node(node.GetState().GetX(), node.GetState().GetY() - 1, node.GetState().GetYear());
-                child.SetTempCost(node.GetCost() + NSEW_COST);
-                break;
-            case "W":
-                child = new Node(node.GetState().GetX() - 1, node.GetState().GetY(), node.GetState().GetYear());
-                child.SetTempCost(node.GetCost() + NSEW_COST);
-                break;
-            case "E":
-                child = new Node(node.GetState().GetX() + 1, node.GetState().GetY(), node.GetState().GetYear());
-                child.SetTempCost(node.GetCost() + NSEW_COST);
-                break;
-            case "NE":
-                child = new Node(node.GetState().GetX() + 1, node.GetState().GetY() + 1, node.GetState().GetYear());
-                child.SetTempCost(node.GetCost() + DIAGONAL_COST);
-                break;
-            case "NW":
-                child = new Node(node.GetState().GetX() - 1, node.GetState().GetY() + 1, node.GetState().GetYear());
-                child.SetTempCost(node.GetCost() + DIAGONAL_COST);
-                break;
-            case "SE":
-                child = new Node(node.GetState().GetX() + 1, node.GetState().GetY() - 1, node.GetState().GetYear());
-                child.SetTempCost(node.GetCost() + DIAGONAL_COST);
-                break;
-            case "SW":
-                child = new Node(node.GetState().GetX() - 1, node.GetState().GetY() - 1, node.GetState().GetYear());
-                child.SetTempCost(node.GetCost() + DIAGONAL_COST);
-                break;
-        }
-        return child;
-    }
-
     public int FutureCost(Node node){
         int cost_x = 0, cost_y = 0, cost = 0;
-        cost_x = Math.abs(node.GetState().GetX() - goal_node.GetState().GetX());
-        cost_y = Math.abs(node.GetState().GetY() - goal_node.GetState().GetY());
-        cost =  Math.min(cost_x, cost_y) * 14 + Math.abs(cost_x-cost_y) * 10 + Math.abs(node.GetState().GetYear() - goal_node.GetState().GetYear());
+        cost_x = Math.abs(node.position_x - goal_node.position_y);
+        cost_y = Math.abs(node.position_y - goal_node.position_y);
+        cost =  Math.min(cost_x, cost_y) * 14 + Math.abs(cost_x-cost_y) * 10 + Math.abs(node.year - goal_node.year);
         return cost;
     }
-    public Node InitialNode(){ return initial_node; }
+    public Node InitialNode(){ return initial_node; } //
 
-    public Node GoalNode(){ return goal_node; }
+    public Node GoalNode(){ return goal_node; } //
 }
 
 class Node{
-    private State state;
-    private Node parent;
-    private int cost;
-    private int temp_cost;
-    private int total_cost;
+    public int position_x;
+    public int position_y;
+    public int year;
+    public Node parent;
+    public int cost;
+    public int temp_cost;
+    public int total_cost;
+
 
     public Node(int x, int y, int year){
-        state = new State(x,y,year);
+        position_x = x;
+        position_y = y;
+        this.year = year;
         parent = null;
         cost = 0;
         temp_cost =0;
@@ -399,76 +391,19 @@ class Node{
 
     public String NodeString(){
         if(parent == null){
-            return Integer.toString(state.GetYear()) + " " + Integer.toString(state.GetX()) + " " + Integer.toString(state.GetY()) + " " + Integer.toString(0);
+            return Integer.toString(year) + " " + Integer.toString(position_x) + " " + Integer.toString(position_y) + " " + Integer.toString(0);
         }
-        return Integer.toString(state.GetYear()) + " " + Integer.toString(state.GetX()) + " " + Integer.toString(state.GetY()) + " " + Integer.toString(cost - parent.cost);
+        return Integer.toString(year) + " " + Integer.toString(position_x) + " " + Integer.toString(position_y) + " " + Integer.toString(cost - parent.cost);
     }
-
-    public State GetState(){
-        return state;
-    }
-
-    public void SetParent(Node node){
-        parent = node;
-    }
-
-    public Node GetParent(){ return parent; }
-
-    public void SetTempCost(int cost){ this.temp_cost = cost; }
-
-    public int GetTempCost(){ return temp_cost; }
-
-    public void SetCost(){ this.cost = temp_cost; }
-
-    public void SetTotalCost(int future_cost){ total_cost =  temp_cost + future_cost; }
-
-    public int GetTotalCost(){ return total_cost; }
-
-    public int GetCost(){ return cost; }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Node node = (Node) o;
-        return Objects.equals(state, node.state);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(state);
-    }
-}
-
-class State{
-    private int position_x;
-    private int position_y;
-    private int year;
-
-    public State(int x, int y, int year){
-        position_x = x;
-        position_y = y;
-        this.year = year;
-    }
-
-    public int GetX(){
-        return position_x;
-    }
-    public int GetY(){
-        return position_y;
-    }
-    public int GetYear(){
-        return year;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        State state = (State) o;
-        return position_x == state.position_x &&
-                position_y == state.position_y &&
-                year == state.year;
+        return position_x == node.position_x &&
+                position_y == node.position_y &&
+                year == node.year;
     }
 
     @Override
@@ -477,10 +412,11 @@ class State{
     }
 }
 
+
 class UCSComparator implements Comparator<Node>{
     @Override
     public int compare(Node n1, Node n2){
-        if(n1.GetCost() > n2.GetCost()){ return 1; }
+        if(n1.cost > n2.cost){ return 1; }
         return -1;
     }
 
@@ -489,7 +425,7 @@ class UCSComparator implements Comparator<Node>{
 class AStarComparartor implements Comparator<Node>{
     @Override
     public int compare(Node n1, Node n2){
-        if(n1.GetTotalCost() > n2.GetTotalCost()){ return 1; }
+        if(n1.total_cost > n2.total_cost){ return 1; }
         return -1;
     }
 }

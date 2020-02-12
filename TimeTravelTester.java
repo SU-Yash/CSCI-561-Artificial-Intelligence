@@ -4,7 +4,7 @@ public class TimeTravelTester {
         Node nodeOne = new Node(0,0, 2020);
         Node nodeTwo = new Node(0, 0, 2020);
         System.out.println(nodeOne.equals(nodeTwo));
-
+            /*
         //Test if the states are same
         State stateOne = new State(0, 0, 2020);
         State stateTwo = new State(0, 0, 2020);
@@ -16,7 +16,7 @@ public class TimeTravelTester {
         System.out.println(problem.InitialNode().GetState().equals(node.GetState()));
         System.out.println(node.GetState());
         System.out.println(problem.InitialNode().GetState());
-
+    */
         /**
          //Problem problem = new Problem(0, 0, 2020, 2, 2, 2021, 100, 100, 5, 1 , 1, 1);
          Problem UCS_problem = new Problem(0, 0, 2020, 1, 27, 2019, 100, 100, 1, 10, 14, 0);
@@ -178,7 +178,14 @@ public class TimeTravelTester {
          2089 10 100 2030
          2030 0 0 1996
 
+         A*
+         1000 1000
+         2020 3 1
+         3011 900 650
+         1
+         2020 450 450 3011
          **/
+
 
     }
 }
