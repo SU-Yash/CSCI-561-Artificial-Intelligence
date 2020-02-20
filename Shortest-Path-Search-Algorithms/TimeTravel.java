@@ -1,14 +1,7 @@
 import java.io.*;
-import java.sql.Time;
 import java.util.*;
 
 public class TimeTravel {
-
-
-    public TimeTravel(){
-
-    }
-
 
     public void readInput() throws IOException {
 
@@ -58,7 +51,7 @@ public class TimeTravel {
     public void AStar(Problem problem) throws IOException {
         Node node = problem.initial_node;
 
-        PriorityQueue<Node> frontier = new PriorityQueue<>(100, new AStarComparartor());
+        PriorityQueue<Node> frontier = new PriorityQueue<>(20, new AStarComparator());
         HashMap<Node, Integer> frontier_map = new HashMap<>();
         HashSet<Node> explored = new HashSet<>();
 
@@ -68,7 +61,6 @@ public class TimeTravel {
         while(true){
             if(frontier.isEmpty()){
                 Failed();
-                System.out.println("Failed");//fail
                 return;
             }
 
@@ -77,7 +69,6 @@ public class TimeTravel {
 
             if(problem.goal_node.equals(node)){
                 Solution(node);
-                System.out.println("Reached in loop: " + node.cost);
                 return;
             }
 
@@ -111,9 +102,8 @@ public class TimeTravel {
     public void UCS(Problem problem) throws IOException {
         Node node = problem.InitialNode();
 
-        PriorityQueue<Node> frontier = new PriorityQueue<>(10, new UCSComparator());
+        PriorityQueue<Node> frontier = new PriorityQueue<>(20, new UCSComparator());
         HashMap<Node, Integer> frontier_map = new HashMap<>();
-        HashSet<Node> explored = new HashSet<>();
 
         frontier.add(node);
         frontier_map.put(node, node.cost);
@@ -121,29 +111,22 @@ public class TimeTravel {
         while(true){
             if(frontier.isEmpty()){
                 Failed();
-                System.out.println("Failed");//fail
                 return;
             }
 
             node = frontier.poll();
-            frontier_map.remove(node);
 
             if(problem.goal_node.equals(node)){
                 Solution(node);
-                System.out.println("Reached in loop: " + node.cost);
                 return;
             }
-            explored.add(node);
 
             for(Node child: problem.Actions(node)) {
-
-                if(!(frontier_map.containsKey(child) || explored.contains(child))) {
+                if(!(frontier_map.containsKey(child))) {
                     child.parent = node;
                     child.cost = child.temp_cost;
-                    //System.out.println(child.NodeString());
                     frontier.add(child);
                     frontier_map.put(child, child.cost);
-
                 }
                 else if (frontier_map.containsKey(child)){
                     if(frontier_map.get(child) > child.temp_cost) {
@@ -165,7 +148,6 @@ public class TimeTravel {
 
         if(problem.goal_node.equals(node)){
             Solution(node);
-            System.out.println("Reached");
             return;
         }
         Queue<Node> frontier_BFS = new LinkedList<>();
@@ -177,7 +159,6 @@ public class TimeTravel {
         while(true){
             if(frontier_BFS.isEmpty()){
                 Failed();
-                System.out.println("Failed");//fail
                 return;
             }
 
@@ -194,7 +175,6 @@ public class TimeTravel {
 
                     if(problem.goal_node.equals(child)){
                         Solution(child);
-                        System.out.println("Reached in loop: " + child.cost);
                         return;
                     }
                     frontier_BFS.add(child);
@@ -246,11 +226,7 @@ public class TimeTravel {
 
     public static void main(String[] args) throws IOException {
         TimeTravel t = new TimeTravel();
-        long start = System.nanoTime();
         t.readInput();
-        long end = System.nanoTime();
-
-        System.out.println("Time: " + (end - start)/1000000000);
 
     }
 }
@@ -422,7 +398,7 @@ class UCSComparator implements Comparator<Node>{
 
 }
 
-class AStarComparartor implements Comparator<Node>{
+class AStarComparator implements Comparator<Node>{
     @Override
     public int compare(Node n1, Node n2){
         if(n1.total_cost > n2.total_cost){ return 1; }
