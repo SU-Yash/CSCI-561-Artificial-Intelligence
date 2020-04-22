@@ -1,6 +1,3 @@
-//>>>>>>>> // Submission 86 :: Alpha-Beta -> double : 0, 4, 4
-
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -50,19 +47,6 @@ class player {
     }
 
     //
-    public int kills(Board_State board, int player){
-        int killed = 0;
-        for(int i=0; i< 5; i++){
-            for(int j=0; j< 5; j++){
-                if(board.curr_board[i][j] == player){
-                    if(board.curr_board != prev){
-                        killed += 1;
-                    }
-                }
-            }
-        }
-        return killed;
-    }
 
 
     // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>  Supporting functions  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -135,15 +119,13 @@ class player {
             temp.curr_board[action.x][action.y] = player;
 
             // Remove any opponent coins if required
-            int killed = removeOponentCoins(temp, 3-player);
+            removeOponentCoins(temp, 3-player);
 
             // Check if it is a valid state
             if(!zeroLiberty(temp, player) && !KOViolation(temp, player)){
-                //partialArea(temp, player);
+                // partialArea(temp, player);
                 ans.add(action);
-                //
                 calculateLiberty(temp, action, player);
-                //action.liberty += 10*killed;
                 action.liberty += utility(temp, player);
                 action.liberty -= totalOponentLiberty(temp, 3-player);
             }
@@ -175,7 +157,7 @@ class player {
         return true;
     }
 
-    public int removeOponentCoins(Board_State temp, int player){
+    public void removeOponentCoins(Board_State temp, int player){
         List<Action> allOponentCoins = getPlayerCoins(temp, player);
 
         List<Action> ans = new ArrayList<>();
@@ -185,13 +167,10 @@ class player {
                 ans.add(coin);
             }
         }
-        int count = 0;
         //remove zero liberty coins
         for(Action coin: ans){
             temp.curr_board[coin.x][coin.y] = 0;
-            count+=1;
         }
-        return count;
     }
 
     public boolean findLiberty(Board_State board, Action p,  int player){
@@ -247,6 +226,13 @@ class player {
             }
         }
         return ally;
+    }
+
+    public void setScores(List<Action> list, int player){
+        for(Action elem : list){
+            elem.score += elem.liberty;
+        }
+        Collections.sort(list, (a, b)-> (int) (b.score - a.score));
     }
 
     public void calculateLiberty(Board_State board, Action p, int player){
@@ -305,19 +291,19 @@ class player {
         return false;
     }
 
-    public double utility(Board_State board, int player){
+    public int utility(Board_State board, int player){
         //Partial Area Score + Full Area Score
         double black, white;
-        double score = 0;
+        int score = 0;
         black = partialArea(board, 1);
         white = partialArea(board, 2) + 2.5;
         if(player == 1){ // We are black
-            score = (black - white);
+            score = (int)(black - white);
         }
         else{
-            score = (white - black);
+            score = (int)(white - black);
         }
-        //score += 10 * kills(board, 3-player);
+        //score -= totalOponentLiberty(board, 3-player);
         return score;
     }
 
@@ -325,23 +311,24 @@ class player {
     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<< MinMax immediate supporting functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  MinMax  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-/*
+
     public Action minMaxDecision(Board_State board){
         int max_score = Integer.MIN_VALUE;
         int score = 0;
         Action bestAction = new Action(-1, -1);
-        HashMap<Action, Integer> map = new HashMap<Action, Integer>();
+
         List<Action> goodAct = goodActions(board, color);
         for(Action action: goodAct){
             score = minValue(result(board, action, color));
-            map.put(action, score);
             if(score > max_score){
                 max_score = score;
                 bestAction = action;
+                action.score = score;
             }
         }
         return bestAction;
     }
+
     public int maxValue(Board_State board){
         if(is_terminal(board)) return utility(board, 3-color);
         board.level +=1;
@@ -352,6 +339,7 @@ class player {
         }
         return v;
     }
+
     public int minValue(Board_State board){
         if(is_terminal(board)) return utility(board, color);
         board.level +=1;
@@ -362,32 +350,31 @@ class player {
         }
         return v;
     }
-*/
+
     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<< MinMax <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  MinMax Alpha-Beta >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  MinMax Alpha-Beta >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     public Action alphaBetaSearch(Board_State board){
-        double max_score = Integer.MIN_VALUE;
-        double score = 0;
+        int max_score = Integer.MIN_VALUE;
+        int score = 0;
         Action bestAction = new Action(-1, -1);
-        HashMap<Action, Double> map = new HashMap<Action, Double>();
-        List<Action> goodAct = goodActions(board, color);
-        for(Action action: goodAct){
+
+        for(Action action: goodActions(board, color)){
             score = minValueAlphaBeta(result(board, action, color), Integer.MIN_VALUE, Integer.MAX_VALUE);
-            map.put(action, score);
             if(score > max_score){
                 max_score = score;
                 bestAction = action;
+                action.score = score;
             }
         }
         return bestAction;
     }
 
-    public double maxValueAlphaBeta(Board_State board, double alpha, double beta){
+    public int maxValueAlphaBeta(Board_State board, int alpha, int beta){
         if(is_terminal(board)) return utility(board, 3-color);
         board.level +=1;
-        double v = Integer.MIN_VALUE;
+        int v = Integer.MIN_VALUE;
         for(Action action : goodActions(board, color)){
             v = Math.max(v, minValueAlphaBeta(result(board, action, color), alpha, beta));
             if(v >= beta) return v;
@@ -396,10 +383,10 @@ class player {
         return v;
     }
 
-    public double minValueAlphaBeta(Board_State board, double alpha, double beta){
+    public int minValueAlphaBeta(Board_State board, int alpha, int beta){
         if(is_terminal(board)) return utility(board, color);
         board.level +=1;
-        double v = Integer.MAX_VALUE;
+        int v = Integer.MAX_VALUE;
         for(Action action : goodActions(board, 3 - color)){
             v = Math.min(v, maxValueAlphaBeta(result(board, action, 3-color), alpha, beta));
             if(v <= alpha) return v;
@@ -474,8 +461,8 @@ public class my_player{
         }
 
         else {
-            //if(!alphabeta) action = agent.minMaxDecision(new Board_State(agent.prev, agent.curr));
-            action = agent.alphaBetaSearch(new Board_State(agent.prev, agent.curr));
+            if(!alphabeta) action = agent.minMaxDecision(new Board_State(agent.prev, agent.curr));
+            else action = agent.alphaBetaSearch(new Board_State(agent.prev, agent.curr));
         }
 
         /*
@@ -507,12 +494,14 @@ class Board_State{
 class Action{
     int x;
     int y;
-    double liberty;
+    int liberty;
+    int score;
 
     Action(int x, int y){
         this.x = x;
         this.y = y;
         liberty=0;
+        score=0;
     }
 
     @Override
