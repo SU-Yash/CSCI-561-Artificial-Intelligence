@@ -1,14 +1,13 @@
-
-//100 % on first two, not so good on third. 14/50
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 class player {
     int color; // 1 is black, 2 is white
     int[][] prev;
     int[][] curr;
-    int depth = 3;
-    int width = 8;
 
     player(int c, int[][] p, int[][] cur){
         color = c;
@@ -52,10 +51,10 @@ class player {
 
     // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>  Supporting functions  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    public boolean checkIfStart(int[][] board){
+    public boolean checkIfStart(){
         for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 5; j++) {
-                if (board[i][j] != 0) {
+                if (curr[i][j] != 0) {
                     return false;
                 }
             }
@@ -81,6 +80,7 @@ class player {
         }
         return count;
     }
+
 
     public List<Action> getAllPossiblePoints(Board_State board, int player){
         List<Action> ans = new ArrayList<>();
@@ -269,21 +269,8 @@ class player {
         // Choose Top 5 moves
         List<Action> ans = new ArrayList<>();
 
-        /*
-        int branching_factor;
 
-        if(allPoints.size() > 15){
-            branching_factor = 10;
-        }
-        else if (allPoints.size() > 7){
-            branching_factor = 5;
-        }
-        else{
-            branching_factor = 2;
-        }
-        */
-
-        for(int i=0;  i < filteredPoints.size(); i++){
+        for(int i=0; i < filteredPoints.size(); i++){
             ans.add(filteredPoints.get(i));
         }
         return ans;
@@ -295,25 +282,26 @@ class player {
         updated.prev_board = board.curr_board;
         updated.curr_board[action.x][action.y] = player;
         updated.level = board.level;
+        removeOponentCoins(updated, 3-player);
         return updated;
     }
 
     public boolean is_terminal(Board_State board){
-        if(board.level == depth) return true;
+        if(board.level == 5) return true;
         return false;
     }
 
-    public double utility(Board_State board, int player){
+    public int utility(Board_State board, int player){
         //Partial Area Score + Full Area Score
         double black, white;
-        double score = 0;
+        int score = 0;
         black = partialArea(board, 1);
         white = partialArea(board, 2) + 2.5;
         if(player == 1){ // We are black
-            score = (black - white);
+            score = (int)(black - white);
         }
         else{
-            score = (white - black);
+            score = (int)(white - black);
         }
         //score -= totalOponentLiberty(board, 3-player);
         return score;
@@ -325,11 +313,12 @@ class player {
     // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  MinMax  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     public Action minMaxDecision(Board_State board){
-        double max_score = Integer.MIN_VALUE;
-        double score = 0.0;
+        int max_score = Integer.MIN_VALUE;
+        int score = 0;
         Action bestAction = new Action(-1, -1);
 
-        for(Action action: goodActions(board, color)){
+        List<Action> goodAct = goodActions(board, color);
+        for(Action action: goodAct){
             score = minValue(result(board, action, color));
             if(score > max_score){
                 max_score = score;
@@ -340,21 +329,23 @@ class player {
         return bestAction;
     }
 
-    public double maxValue(Board_State board){
+    public int maxValue(Board_State board){
         if(is_terminal(board)) return utility(board, 3-color);
         board.level +=1;
-        double v = Integer.MIN_VALUE;
-        for(Action action : goodActions(board, color)){
+        int v = Integer.MIN_VALUE;
+        List<Action> goodAct = goodActions(board, color);
+        for(Action action : goodAct){
             v = Math.max(v, minValue(result(board, action, color)));
         }
         return v;
     }
 
-    public double minValue(Board_State board){
+    public int minValue(Board_State board){
         if(is_terminal(board)) return utility(board, color);
         board.level +=1;
-        double v = Integer.MAX_VALUE;
-        for(Action action : goodActions(board, 3 - color)){
+        int v = Integer.MAX_VALUE;
+        List<Action> goodAct = goodActions(board, 3-color);
+        for(Action action : goodAct){
             v = Math.min(v, maxValue(result(board, action, 3-color)));
         }
         return v;
@@ -362,8 +353,8 @@ class player {
 
     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<< MinMax <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  MinMax Alpha-Beta >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-/*
+        // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  MinMax Alpha-Beta >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
     public Action alphaBetaSearch(Board_State board){
         int max_score = Integer.MIN_VALUE;
         int score = 0;
@@ -403,7 +394,7 @@ class player {
         }
         return v;
     }
-*/
+
     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<< MinMax  Alpha-Beta <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     public static int[][] deepCopy(int[][] a){
@@ -455,65 +446,30 @@ public class my_player{
         myWriter.close();
     }
 
-
-    public static int NumberOfGames(player agent) throws IOException {
-        File count_file = new File("count.txt");
-        int count = 0;
-
-        if(count_file.exists()){
-            Scanner sc = new Scanner(count_file);
-            if(sc.hasNext()){
-                count = Integer.parseInt(sc.nextLine());
-            }
-        }
-        if(agent.checkIfStart(agent.prev)){
-
-            if(agent.checkIfStart(agent.curr)){
-                count = 1;
-            }
-            else{
-                count = 2;
-            }
-        }
-        else {
-            count = count + 2;
-        }
-
-        FileWriter myCounter = new FileWriter("count.txt");
-        myCounter.write(count + "");
-        myCounter.close();
-
-        return count;
-    }
-
-
     public static void main(String[] args) throws IOException {
 
-        boolean alphabeta = false;
+        boolean alphabeta = true;
 
         player agent = readInput();
 
-        int count = NumberOfGames(agent);
-
-        System.out.println("Count is: " + count);
-
         Action action = new Action(-1, -1);
 
-        if(agent.checkIfStart(agent.curr)){ // Black player
+
+        if(agent.checkIfStart()){ // Black player
             action = new Action(2, 2);
 
         }
 
-        else{
-            if(!alphabeta) {
-                action = agent.minMaxDecision(new Board_State(agent.prev, agent.curr));
-            }
-            else
-            {
-                System.out.println("Alpha");
-                //action = agent.alphaBetaSearch(new Board_State(agent.prev, agent.curr));
-            }
+        else {
+            if(!alphabeta) action = agent.minMaxDecision(new Board_State(agent.prev, agent.curr));
+            else action = agent.alphaBetaSearch(new Board_State(agent.prev, agent.curr));
         }
+
+        /*
+        if(agent.checkForPass(agent, action)){
+            action = new Action(-1, -1);
+        }
+        */
 
         writeOutput(action);
 
@@ -539,7 +495,7 @@ class Action{
     int x;
     int y;
     int liberty;
-    double score;
+    int score;
 
     Action(int x, int y){
         this.x = x;

@@ -1,3 +1,6 @@
+//>>>>>>>> // Submission 86 :: Alpha-Beta -> double : 0, 4, 4
+
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -13,6 +16,52 @@ class player {
         color = c;
         prev = p;
         curr = cur;
+    }
+
+    //
+    public int totalOponentLiberty(Board_State board, int player){
+        int totalL = 0;
+        for(int i=0; i< 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                if(board.curr_board[i][j] == player){
+                    totalL += calculatecumuLiberty(board, new Action(i, j), player);
+                }
+            }
+        }
+        return totalL;
+    }
+
+    public int calculatecumuLiberty(Board_State board, Action action, int player){
+        int liberty = 0;
+        int[][] temp = deepCopy(board.curr_board);
+        List<Action> ally = allyDFS(board, player, action); //(n2)
+
+        for(Action al: ally){
+            List<Action> neighbours = getNeighbours(al);
+            for(Action neigh : neighbours){
+                if(temp[neigh.x][neigh.y] == 0){
+                    temp[neigh.x][neigh.y] = -1;
+                    liberty+=1;
+                }
+
+            }
+        }
+        return liberty;
+    }
+
+    //
+    public int kills(Board_State board, int player){
+        int killed = 0;
+        for(int i=0; i< 5; i++){
+            for(int j=0; j< 5; j++){
+                if(board.curr_board[i][j] == player){
+                    if(board.curr_board != prev){
+                        killed += 1;
+                    }
+                }
+            }
+        }
+        return killed;
     }
 
 
@@ -48,110 +97,19 @@ class player {
         return count;
     }
 
-    // First corner 01, 10 >>>>>>>>>>>
-    public boolean possibleCaptureFirstCorner(Board_State board, int player){
-        if((board.curr_board[0][1] == 0 || board.curr_board[0][1] == player) && (board.curr_board[1][0] == 0 || board.curr_board[1][0] == player) && !(board.curr_board[0][1] == player && board.curr_board[1][0] == player)){
-            return true;
-        }
-        return false;
-    }
-
-    public List<Action> firstCorner(Board_State board, int player){
-        if(board.curr_board[0][1] == player) return new ArrayList<>(Arrays.asList(new Action(1, 0)));
-        else if (board.curr_board[1][0] == player) return new ArrayList<>(Arrays.asList(new Action(0, 1)));
-        else return new ArrayList<>(Arrays.asList(new Action(0, 1)));
-    }
-    // First corner 01, 10 <<<<<<<<<<<<<<<
-
-    // Second corner 03, 14 >>>>>>>>>>>>>>
-    public boolean possibleCaptureSecondCorner(Board_State board, int player){
-        if((board.curr_board[0][3] == 0 || board.curr_board[0][3] == player) && (board.curr_board[1][4] == 0 || board.curr_board[1][4] == player) && !(board.curr_board[0][3] == player && board.curr_board[1][4] == player)){
-            return true;
-        }
-        return false;
-    }
-
-    public List<Action> secondCorner(Board_State board, int player){
-        if(board.curr_board[0][3] == player) return new ArrayList<>(Arrays.asList(new Action(1, 4)));
-        else if (board.curr_board[1][4] == player) return new ArrayList<>(Arrays.asList(new Action(0, 3)));
-        else return new ArrayList<>(Arrays.asList(new Action(1, 4)));
-    }
-    // Second corner 03, 14 <<<<<<<<<<<<<<
-
-    // Third corner 30, 41 >>>>>>>>>>>>>>
-    public boolean possibleCaptureThirdCorner(Board_State board, int player){
-        if((board.curr_board[3][0] == 0 || board.curr_board[3][0] == player) && (board.curr_board[4][1] == 0 || board.curr_board[4][1] == player) && !(board.curr_board[3][0] == player && board.curr_board[4][1] == player)){
-            return true;
-        }
-        return false;
-    }
-
-    public List<Action> thirdCorner(Board_State board, int player){
-        if(board.curr_board[3][0] == player) return new ArrayList<>(Arrays.asList(new Action(4,1)));
-        else if (board.curr_board[4][1] == player) return new ArrayList<>(Arrays.asList(new Action(3, 0)));
-        else return new ArrayList<>(Arrays.asList(new Action(3, 0)));
-    }
-    // Third corner 30, 41 <<<<<<<<<<<<<<
-
-    // Fourth corner 34, 43 >>>>>>>>>>>>>>
-    public boolean possibleCaptureFourthCorner(Board_State board, int player){
-        if((board.curr_board[3][4] == 0 || board.curr_board[3][4] == player) && (board.curr_board[4][3] == 0 || board.curr_board[4][3] == player) && !(board.curr_board[3][4] == player && board.curr_board[4][3] == player)){
-            return true;
-        }
-        return false;
-    }
-
-    public List<Action> fourthCorner(Board_State board, int player){
-        if(board.curr_board[3][4] == player) return new ArrayList<>(Arrays.asList(new Action(4, 3)));
-        else if (board.curr_board[4][3] == player) return new ArrayList<>(Arrays.asList(new Action(3, 4)));
-        else return new ArrayList<>(Arrays.asList(new Action(3, 4)));
-    }
-    // Fourth corner 34, 43 <<<<<<<<<<<<<<
 
     public List<Action> getAllPossiblePoints(Board_State board, int player){
-            List<Action> ans = new ArrayList<>();
-            List<Action> corner = new ArrayList<>();
-            for (int i = 0; i < 5; i++) {
-                for (int j = 0; j < 5; j++) {
-                    if (board.curr_board[i][j] == 0) {
-                        ans.add(new Action(i, j));
-                    }
+        List<Action> ans = new ArrayList<>();
+        List<Action> corner = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                if (board.curr_board[i][j] == 0) {
+                    ans.add(new Action(i, j));
                 }
             }
-            /*
-            if(ans.size()>15){
-                if(possibleCaptureFirstCorner(board, player)){
-                    corner = firstCorner(board, player);
-                    corner = filterPoints(board, corner, player);
-                    if(corner.size() != 0){
-                        return corner;
-                    }
-                }
-                else if(possibleCaptureSecondCorner(board, player))
-                {
-                    corner = secondCorner(board, player);
-                    corner = filterPoints(board, corner, player);
-                    if(corner.size() != 0){
-                        return corner;
-                    }
-                }
-                else if(possibleCaptureThirdCorner(board, player)){
-                    corner = thirdCorner(board, player);
-                    corner = filterPoints(board, corner, player);
-                    if(corner.size() != 0){
-                        return corner;
-                    }
-                }
-                else if (possibleCaptureFourthCorner(board, player)){
-                    corner = fourthCorner(board, player);
-                    corner = filterPoints(board, corner, player);
-                    if(corner.size() != 0){
-                        return corner;
-                    }
-                }
-            }*/
+        }
 
-            return ans;
+        return ans;
     }
 
     public List<Action> getPlayerCoins(Board_State board, int player){
@@ -177,14 +135,17 @@ class player {
             temp.curr_board[action.x][action.y] = player;
 
             // Remove any opponent coins if required
-            removeOponentCoins(temp, 3-player);
+            int killed = removeOponentCoins(temp, 3-player);
 
             // Check if it is a valid state
             if(!zeroLiberty(temp, player) && !KOViolation(temp, player)){
-                // partialArea(temp, player);
+                //partialArea(temp, player);
                 ans.add(action);
+                //
                 calculateLiberty(temp, action, player);
+                //action.liberty += 10*killed;
                 action.liberty += utility(temp, player);
+                action.liberty -= totalOponentLiberty(temp, 3-player);
             }
             // Add to list if valid
         }
@@ -214,7 +175,7 @@ class player {
         return true;
     }
 
-    public void removeOponentCoins(Board_State temp, int player){
+    public int removeOponentCoins(Board_State temp, int player){
         List<Action> allOponentCoins = getPlayerCoins(temp, player);
 
         List<Action> ans = new ArrayList<>();
@@ -224,10 +185,13 @@ class player {
                 ans.add(coin);
             }
         }
+        int count = 0;
         //remove zero liberty coins
         for(Action coin: ans){
             temp.curr_board[coin.x][coin.y] = 0;
+            count+=1;
         }
+        return count;
     }
 
     public boolean findLiberty(Board_State board, Action p,  int player){
@@ -285,13 +249,6 @@ class player {
         return ally;
     }
 
-    public void setScores(List<Action> list, int player){
-        for(Action elem : list){
-            elem.score += elem.liberty;
-        }
-        Collections.sort(list, (a, b)-> (int) (b.score - a.score));
-    }
-
     public void calculateLiberty(Board_State board, Action p, int player){
         int liberty = 0;
         int[][] temp = deepCopy(board.curr_board); //(n2)
@@ -326,21 +283,8 @@ class player {
         // Choose Top 5 moves
         List<Action> ans = new ArrayList<>();
 
-        /*
-        int branching_factor;
 
-        if(allPoints.size() > 15){
-            branching_factor = 10;
-        }
-        else if (allPoints.size() > 7){
-            branching_factor = 5;
-        }
-        else{
-            branching_factor = 2;
-        }
-        */
-
-        for(int i=0; i<8 && i < filteredPoints.size(); i++){
+        for(int i=0; i < filteredPoints.size(); i++){
             ans.add(filteredPoints.get(i));
         }
         return ans;
@@ -352,69 +296,119 @@ class player {
         updated.prev_board = board.curr_board;
         updated.curr_board[action.x][action.y] = player;
         updated.level = board.level;
+        removeOponentCoins(updated, 3-player);
         return updated;
     }
 
     public boolean is_terminal(Board_State board){
-        if(board.level == 3) return true;
+        if(board.level == 5) return true;
         return false;
     }
 
-    public int utility(Board_State board, int player){
+    public double utility(Board_State board, int player){
         //Partial Area Score + Full Area Score
         double black, white;
+        double score = 0;
         black = partialArea(board, 1);
         white = partialArea(board, 2) + 2.5;
         if(player == 1){ // We are black
-            return (int)(black - white);
+            score = (black - white);
         }
         else{
-            return (int)(white - black);
+            score = (white - black);
         }
+        //score += 10 * kills(board, 3-player);
+        return score;
     }
 
 
     // <<<<<<<<<<<<<<<<<<<<<<<<<<<<< MinMax immediate supporting functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  MinMax  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
+/*
     public Action minMaxDecision(Board_State board){
         int max_score = Integer.MIN_VALUE;
         int score = 0;
         Action bestAction = new Action(-1, -1);
-
-        for(Action action: goodActions(board, color)){
+        HashMap<Action, Integer> map = new HashMap<Action, Integer>();
+        List<Action> goodAct = goodActions(board, color);
+        for(Action action: goodAct){
             score = minValue(result(board, action, color));
+            map.put(action, score);
             if(score > max_score){
                 max_score = score;
                 bestAction = action;
-                action.score = score;
+            }
+        }
+        return bestAction;
+    }
+    public int maxValue(Board_State board){
+        if(is_terminal(board)) return utility(board, 3-color);
+        board.level +=1;
+        int v = Integer.MIN_VALUE;
+        List<Action> goodAct = goodActions(board, color);
+        for(Action action : goodAct){
+            v = Math.max(v, minValue(result(board, action, color)));
+        }
+        return v;
+    }
+    public int minValue(Board_State board){
+        if(is_terminal(board)) return utility(board, color);
+        board.level +=1;
+        int v = Integer.MAX_VALUE;
+        List<Action> goodAct = goodActions(board, 3-color);
+        for(Action action : goodAct){
+            v = Math.min(v, maxValue(result(board, action, 3-color)));
+        }
+        return v;
+    }
+*/
+    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<< MinMax <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  MinMax Alpha-Beta >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    public Action alphaBetaSearch(Board_State board){
+        double max_score = Integer.MIN_VALUE;
+        double score = 0;
+        Action bestAction = new Action(-1, -1);
+        HashMap<Action, Double> map = new HashMap<Action, Double>();
+        List<Action> goodAct = goodActions(board, color);
+        for(Action action: goodAct){
+            score = minValueAlphaBeta(result(board, action, color), Integer.MIN_VALUE, Integer.MAX_VALUE);
+            map.put(action, score);
+            if(score > max_score){
+                max_score = score;
+                bestAction = action;
             }
         }
         return bestAction;
     }
 
-    public int maxValue(Board_State board){
+    public double maxValueAlphaBeta(Board_State board, double alpha, double beta){
         if(is_terminal(board)) return utility(board, 3-color);
         board.level +=1;
-        int v = Integer.MIN_VALUE;
+        double v = Integer.MIN_VALUE;
         for(Action action : goodActions(board, color)){
-            v = Math.max(v, minValue(result(board, action, color)));
+            v = Math.max(v, minValueAlphaBeta(result(board, action, color), alpha, beta));
+            if(v >= beta) return v;
+            alpha = Math.max(alpha, v);
         }
         return v;
     }
 
-    public int minValue(Board_State board){
+    public double minValueAlphaBeta(Board_State board, double alpha, double beta){
         if(is_terminal(board)) return utility(board, color);
         board.level +=1;
-        int v = Integer.MAX_VALUE;
+        double v = Integer.MAX_VALUE;
         for(Action action : goodActions(board, 3 - color)){
-            v = Math.min(v, maxValue(result(board, action, 3-color)));
+            v = Math.min(v, maxValueAlphaBeta(result(board, action, 3-color), alpha, beta));
+            if(v <= alpha) return v;
+            beta = Math.min(beta, v);
         }
         return v;
     }
 
-    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<< MinMax <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<< MinMax  Alpha-Beta <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     public static int[][] deepCopy(int[][] a){
         int[][] ans = new int[a.length][a[0].length];
@@ -467,13 +461,22 @@ public class my_player{
 
     public static void main(String[] args) throws IOException {
 
-        boolean alphabeta = false;
+        boolean alphabeta = true;
 
         player agent = readInput();
 
         Action action = new Action(-1, -1);
 
-        if(!alphabeta) action = agent.minMaxDecision(new Board_State(agent.prev, agent.curr));
+
+        if(agent.checkIfStart()){ // Black player
+            action = new Action(2, 2);
+
+        }
+
+        else {
+            //if(!alphabeta) action = agent.minMaxDecision(new Board_State(agent.prev, agent.curr));
+            action = agent.alphaBetaSearch(new Board_State(agent.prev, agent.curr));
+        }
 
         /*
         if(agent.checkForPass(agent, action)){
@@ -504,14 +507,12 @@ class Board_State{
 class Action{
     int x;
     int y;
-    int liberty;
-    int score;
+    double liberty;
 
     Action(int x, int y){
         this.x = x;
         this.y = y;
         liberty=0;
-        score=0;
     }
 
     @Override
